@@ -44,9 +44,17 @@ All tunables live in `src/config.js`:
 
 Dashboard and showcase data is sample data in `src/data/mock.js`; case studies are labeled as illustrative — replace with real ones.
 
-## Deploy
+## Deploy (Cloudflare)
 
-Uses client-side routing — configure your host to serve `index.html` for unknown paths (e.g. Netlify `_redirects`: `/* /index.html 200`, or Vercel rewrites).
+Hosted as a static site on Cloudflare Workers (`wrangler.jsonc`). Unknown paths fall back to `index.html` for client-side routing, and `public/_headers` marks the test site `noindex`.
+
+```bash
+export CLOUDFLARE_API_TOKEN=...   # token with "Edit Cloudflare Workers" permissions
+npm run deploy                    # builds, then publishes to https://webrev.<account>.workers.dev
+```
+
+For a custom subdomain on a domain in your Cloudflare account, add to `wrangler.jsonc`:
+`"routes": [{ "pattern": "preview.yourdomain.com", "custom_domain": true }]`. Remove `public/_headers` when the site should be indexed.
 
 ## Accessibility
 
