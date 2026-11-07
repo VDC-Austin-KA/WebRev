@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { AnimatePresence, motion } from 'motion/react'
 import { BUSINESS_TYPES, CASE_STUDIES, VIDEOS } from '../data/mock'
-import { Button, Icon, Modal, SpotsBadge, Tabs, VideoPlayer } from '../components/ui'
+import { Button, Icon, Modal, Segmented, Select, SpotsBadge, Tabs, VideoPlayer, inputCls } from '../components/ui'
 import PortalPreview from '../components/PortalPreview'
+import { Reveal, easeOut, fadeUp, flow, spring, stagger, useFlow } from '../motion'
 
 const TABS = [
   { id: 'videos', label: 'Video demos' },
@@ -12,26 +13,34 @@ const TABS = [
 
 export default function Showcase() {
   const [tab, setTab] = useState('videos')
+  const dir = useFlow(tab, TABS.findIndex((t) => t.id === tab), 'x')
   return (
     <>
-      <section className="bg-slate-950 py-16 text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SpotsBadge dark />
-          <h1 className="mt-4 text-4xl font-extrabold sm:text-5xl">See it working before you switch</h1>
-          <p className="mt-4 max-w-2xl text-lg text-slate-300">Feature walk-throughs, before-and-after transformations, and a live preview of what your customers will see.</p>
+      <section className="relative overflow-hidden pb-6 pt-20 text-center">
+        <div className="pointer-events-none absolute -top-40 left-1/2 h-[480px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(52,211,153,0.18),transparent)]" aria-hidden="true" />
+        <motion.div className="relative mx-auto max-w-6xl px-4 sm:px-6" initial="hidden" animate="show" variants={stagger(0.1)}>
+          <motion.div variants={fadeUp}><SpotsBadge /></motion.div>
+          <motion.h1 variants={fadeUp} className="text-gradient mt-6 text-5xl font-semibold tracking-tight sm:text-7xl">See it working.</motion.h1>
+          <motion.p variants={fadeUp} className="mx-auto mt-5 max-w-2xl text-lg text-neutral-400">Feature walk-throughs, before-and-after transformations, and a live preview of what your customers will see.</motion.p>
+        </motion.div>
+      </section>
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div className="flex justify-center"><Tabs tabs={TABS} active={tab} onChange={setTab} label="Showcase sections" /></div>
+        <div className="mt-12">
+          <AnimatePresence mode="wait" custom={dir}>
+            <motion.div key={tab} custom={dir} variants={flow} initial="initial" animate="animate" exit="exit" id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
+              {tab === 'videos' && <VideoGallery />}
+              {tab === 'cases' && <CaseStudies />}
+              {tab === 'sandbox' && <Sandbox />}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </section>
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <Tabs tabs={TABS} active={tab} onChange={setTab} label="Showcase sections" />
-        <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} className="mt-10">
-          {tab === 'videos' && <VideoGallery />}
-          {tab === 'cases' && <CaseStudies />}
-          {tab === 'sandbox' && <Sandbox />}
-        </div>
-      </section>
-      <section className="bg-slate-50 py-16 text-center">
-        <h2 className="text-2xl font-bold text-slate-900">Ready to replace your stack?</h2>
-        <Button as={Link} to="/#pricing" className="mt-6">Claim Early Bird Pricing</Button>
+      <section className="py-28 text-center">
+        <Reveal>
+          <h2 className="text-gradient text-4xl font-semibold tracking-tight sm:text-5xl">Ready to replace your stack?</h2>
+          <Button to="/#pricing" className="mt-8">Claim Early Bird Pricing</Button>
+        </Reveal>
       </section>
     </>
   )
@@ -41,23 +50,24 @@ function VideoGallery() {
   const [playing, setPlaying] = useState(null)
   return (
     <>
-      <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <motion.ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" variants={stagger(0.06)} initial="hidden" animate="show">
         {VIDEOS.map((v) => (
-          <li key={v.id}>
-            <button onClick={() => setPlaying(v)} className="group block w-full overflow-hidden rounded-2xl border border-slate-200 text-left transition hover:shadow-lg">
-              <span className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-400 text-slate-950 transition group-hover:scale-110"><Icon name="play" className="h-6 w-6" /></span>
-                <span className="absolute bottom-3 right-3 rounded bg-slate-950/80 px-2 py-0.5 text-xs font-medium text-white">{v.length}</span>
-                <span className="absolute left-3 top-3 rounded bg-white/90 px-2 py-0.5 text-xs font-semibold text-slate-900">{v.category}</span>
+          <motion.li key={v.id} variants={fadeUp}>
+            <motion.button whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} transition={spring} onClick={() => setPlaying(v)} className="group block w-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-neutral-950 text-left">
+              <span className="relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-neutral-800 to-black">
+                <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(52,211,153,0.25),transparent_60%)] transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-125" aria-hidden="true" />
+                <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-white/90 text-black shadow-xl transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:scale-110"><Icon name="play" className="h-6 w-6" /></span>
+                <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-2.5 py-0.5 text-xs font-medium text-white backdrop-blur">{v.length}</span>
+                <span className="glass absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-xs font-medium text-white">{v.category}</span>
               </span>
               <span className="block p-5">
-                <span className="block font-bold text-slate-900">{v.title}</span>
-                <span className="mt-1 block text-sm text-slate-600">{v.summary}</span>
+                <span className="block font-semibold text-white">{v.title}</span>
+                <span className="mt-1 block text-sm text-neutral-400">{v.summary}</span>
               </span>
-            </button>
-          </li>
+            </motion.button>
+          </motion.li>
         ))}
-      </ul>
+      </motion.ul>
       <Modal open={!!playing} onClose={() => setPlaying(null)} title={playing?.title ?? ''} wide>
         {playing && <VideoPlayer video={playing} />}
       </Modal>
@@ -68,81 +78,76 @@ function VideoGallery() {
 function CaseStudies() {
   return (
     <>
-      <p className="mb-6 text-sm text-slate-600">Illustrative examples of typical transformations.</p>
-      <div className="grid gap-6 lg:grid-cols-3">
+      <p className="mb-6 text-center text-sm text-neutral-400">Illustrative examples of typical transformations.</p>
+      <motion.div className="grid gap-5 lg:grid-cols-3" variants={stagger(0.1)} initial="hidden" animate="show">
         {CASE_STUDIES.map((c) => (
-          <article key={c.business} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-bold text-slate-900">{c.business}</h3>
-            <p className="text-sm text-slate-600">{c.owner}</p>
-            <div className="mt-5 grid flex-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              <div className="rounded-xl bg-rose-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-rose-800">Before</p>
-                <ul className="mt-2 space-y-1.5 text-sm text-slate-800">{c.before.map((b) => <li key={b} className="flex gap-2"><Icon name="x" className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />{b}</li>)}</ul>
+          <motion.article key={c.business} variants={fadeUp} className="flex flex-col rounded-[1.75rem] border border-white/10 bg-neutral-950 p-6">
+            <h3 className="text-xl font-semibold">{c.business}</h3>
+            <p className="text-sm text-neutral-400">{c.owner}</p>
+            <div className="mt-5 flex-1 space-y-3">
+              <div className="rounded-2xl bg-rose-400/[0.07] p-4 ring-1 ring-rose-400/15">
+                <p className="text-xs font-semibold uppercase tracking-wider text-rose-300">Before</p>
+                <ul className="mt-2 space-y-1.5 text-sm text-neutral-300">{c.before.map((b) => <li key={b} className="flex gap-2"><Icon name="x" className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />{b}</li>)}</ul>
               </div>
-              <div className="rounded-xl bg-emerald-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">After</p>
-                <ul className="mt-2 space-y-1.5 text-sm text-slate-800">{c.after.map((a) => <li key={a} className="flex gap-2"><Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />{a}</li>)}</ul>
+              <div className="flex justify-center text-neutral-500" aria-hidden="true"><Icon name="chevron" className="h-5 w-5" /></div>
+              <div className="rounded-2xl bg-emerald-400/[0.07] p-4 ring-1 ring-emerald-400/20">
+                <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">After</p>
+                <ul className="mt-2 space-y-1.5 text-sm text-neutral-200">{c.after.map((a) => <li key={a} className="flex gap-2"><Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />{a}</li>)}</ul>
               </div>
             </div>
-            <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-200 pt-5">
+            <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-white/10 pt-5">
               {c.stats.map((s) => (
-                <div key={s.label}><dt className="text-xs text-slate-600">{s.label}</dt><dd className="text-2xl font-bold text-slate-900">{s.value}</dd></div>
+                <div key={s.label}><dt className="text-xs text-neutral-400">{s.label}</dt><dd className="text-2xl font-semibold tracking-tight">{s.value}</dd></div>
               ))}
             </dl>
-          </article>
+          </motion.article>
         ))}
-      </div>
+      </motion.div>
     </>
   )
 }
 
-const SWATCHES = ['#10b981', '#6366f1', '#e11d48', '#f59e0b', '#0ea5e9']
+const SWATCHES = [['#10b981', 'Emerald'], ['#6366f1', 'Indigo'], ['#e11d48', 'Rose'], ['#f59e0b', 'Amber'], ['#0ea5e9', 'Sky']]
+const TYPE_OPTIONS = Object.entries(BUSINESS_TYPES).map(([value, v]) => ({ value, label: v.label }))
 
 function Sandbox() {
-  const [form, setForm] = useState({ name: 'Bloom & Co. Salon', tagline: 'Modern cuts, warm welcomes.', type: 'salon', color: SWATCHES[0] })
+  const [form, setForm] = useState({ name: 'Bloom & Co. Salon', tagline: 'Modern cuts, warm welcomes.', type: 'salon', color: SWATCHES[0][0] })
   const [device, setDevice] = useState('desktop')
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
   return (
     <div className="grid gap-8 lg:grid-cols-3">
-      <form className="space-y-5 rounded-2xl border border-slate-200 p-6" onSubmit={(e) => e.preventDefault()} aria-label="Customize preview">
-        <h2 className="text-lg font-bold text-slate-900">Make it yours</h2>
+      <motion.form
+        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: easeOut }}
+        className="space-y-5 self-start rounded-[1.75rem] border border-white/10 bg-neutral-950 p-6" onSubmit={(e) => e.preventDefault()} aria-label="Customize preview"
+      >
+        <h2 className="text-lg font-semibold">Make it yours</h2>
         <div>
-          <label htmlFor="sb-name" className="block text-sm font-medium text-slate-900">Business name</label>
-          <input id="sb-name" value={form.name} onChange={set('name')} maxLength={40} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+          <label htmlFor="sb-name" className="mb-1.5 block text-sm font-medium text-neutral-300">Business name</label>
+          <input id="sb-name" value={form.name} onChange={set('name')} maxLength={40} className={inputCls} />
         </div>
         <div>
-          <label htmlFor="sb-tag" className="block text-sm font-medium text-slate-900">Tagline</label>
-          <input id="sb-tag" value={form.tagline} onChange={set('tagline')} maxLength={80} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+          <label htmlFor="sb-tag" className="mb-1.5 block text-sm font-medium text-neutral-300">Tagline</label>
+          <input id="sb-tag" value={form.tagline} onChange={set('tagline')} maxLength={80} className={inputCls} />
         </div>
-        <div>
-          <label htmlFor="sb-type" className="block text-sm font-medium text-slate-900">Business type</label>
-          <select id="sb-type" value={form.type} onChange={set('type')} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-            {Object.entries(BUSINESS_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </select>
-        </div>
+        <Select label="Business type" options={TYPE_OPTIONS} value={form.type} onChange={(type) => setForm({ ...form, type })} />
         <fieldset>
-          <legend className="text-sm font-medium text-slate-900">Brand color</legend>
-          <div className="mt-2 flex gap-2">
-            {SWATCHES.map((c) => (
-              <label key={c} className="cursor-pointer">
+          <legend className="text-sm font-medium text-neutral-300">Brand color</legend>
+          <div className="mt-2 flex gap-2.5">
+            {SWATCHES.map(([c, label]) => (
+              <label key={c} className="relative cursor-pointer">
                 <input type="radio" name="color" value={c} checked={form.color === c} onChange={set('color')} className="peer sr-only" />
-                <span className="block h-9 w-9 rounded-full ring-offset-2 peer-checked:ring-2 peer-checked:ring-slate-900 peer-focus-visible:outline-3 peer-focus-visible:outline-emerald-500" style={{ background: c }} />
-                <span className="sr-only">{c}</span>
+                <motion.span whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="block h-9 w-9 rounded-full peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-emerald-400" style={{ background: c }} />
+                {form.color === c && <motion.span layoutId="swatch-ring" transition={spring} className="pointer-events-none absolute -inset-1 rounded-full ring-2 ring-white" />}
+                <span className="sr-only">{label}</span>
               </label>
             ))}
           </div>
         </fieldset>
-        <fieldset>
-          <legend className="text-sm font-medium text-slate-900">Device</legend>
-          <div className="mt-2 inline-flex rounded-lg bg-slate-100 p-1">
-            {[['desktop', 'monitor'], ['mobile', 'phone']].map(([d, icon]) => (
-              <button key={d} type="button" onClick={() => setDevice(d)} aria-pressed={device === d} className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium capitalize ${device === d ? 'bg-white shadow' : 'text-slate-700'}`}>
-                <Icon name={icon} className="h-4 w-4" />{d}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-      </form>
+        <div>
+          <p className="mb-2 text-sm font-medium text-neutral-300">Device</p>
+          <Segmented label="Device" value={device} onChange={setDevice} options={[{ value: 'desktop', label: 'Desktop', icon: 'monitor' }, { value: 'mobile', label: 'Mobile', icon: 'phone' }]} />
+        </div>
+      </motion.form>
       <div className="lg:col-span-2">
         <PortalPreview {...form} device={device} />
       </div>
