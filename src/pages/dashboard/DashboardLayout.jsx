@@ -1,8 +1,10 @@
 import { createContext, useContext, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Icon, Logo } from '../../components/ui'
+import { Link, NavLink } from 'react-router-dom'
+import { AnimatePresence, motion } from 'motion/react'
+import { Icon, Logo, Switch } from '../../components/ui'
 import PortalPreview from '../../components/PortalPreview'
 import { APPOINTMENTS, PTO_REQUESTS } from '../../data/mock'
+import { FrozenOutlet, Page, spring, useFlow, useRouteLocation } from '../../motion'
 
 const NAV = [
   { to: '/dashboard', label: 'Overview', icon: 'home', end: true },
@@ -23,18 +25,24 @@ export default function DashboardLayout() {
   const [pto, setPto] = useState(PTO_REQUESTS)
   const [customerView, setCustomerView] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
-  const { pathname } = useLocation()
-  const current = NAV.find((n) => (n.end ? pathname === n.to : pathname.startsWith(n.to)))
+  const { pathname } = useRouteLocation()
+  const idx = Math.max(0, NAV.findIndex((n) => (n.end ? pathname === n.to : pathname.startsWith(n.to))))
+  const key = customerView ? 'customer' : pathname
+  // Sidebar is vertical → pages move along y. Customer view is a layer "inside" → zoom.
+  const dir = useFlow(key, customerView ? NAV.length : idx, (a, b) => (a === 'customer' || b === 'customer' ? 'z' : 'y'))
+  const title = customerView ? 'Customer portal preview' : NAV[idx].label
 
   return (
     <DashCtx.Provider value={{ business, setBusiness, appointments, setAppointments, pto, setPto }}>
-      <a href="#dash-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2">Skip to content</a>
-      <div className="flex min-h-screen bg-slate-100">
-        {navOpen && <div className="fixed inset-0 z-30 bg-slate-950/60 lg:hidden" onClick={() => setNavOpen(false)} aria-hidden="true" />}
-        <aside className={`fixed inset-y-0 left-0 z-40 w-64 transform bg-slate-950 p-4 transition-transform lg:static lg:translate-x-0 ${navOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <a href="#dash-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-black">Skip to content</a>
+      <div className="flex min-h-screen bg-black text-neutral-100">
+        <AnimatePresence>
+          {navOpen && <motion.div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setNavOpen(false)} aria-hidden="true" />}
+        </AnimatePresence>
+        <aside className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-white/10 bg-neutral-950/95 p-4 backdrop-blur-xl transition-transform duration-500 ease-[var(--ease-apple)] lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${navOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="flex items-center justify-between px-2 py-2">
-            <Link to="/"><Logo dark /></Link>
-            <button className="rounded p-1 text-slate-300 lg:hidden" onClick={() => setNavOpen(false)} aria-label="Close menu"><Icon name="x" /></button>
+            <Link to="/"><Logo /></Link>
+            <button className="rounded-full p-1 text-neutral-400 lg:hidden" onClick={() => setNavOpen(false)} aria-label="Close menu"><Icon name="x" /></button>
           </div>
           <nav className="mt-8 space-y-1" aria-label="Dashboard">
             {NAV.map((n) => (
@@ -43,39 +51,65 @@ export default function DashboardLayout() {
                 to={n.to}
                 end={n.end}
                 onClick={() => { setNavOpen(false); setCustomerView(false) }}
-                className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? 'bg-emerald-400 text-slate-950' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+                className={({ isActive }) => `relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-300 ${isActive && !customerView ? 'text-white' : 'text-neutral-400 hover:text-white'}`}
               >
-                <Icon name={n.icon} />{n.label}
+                {({ isActive }) => (
+                  <>
+                    {isActive && !customerView && (
+                      <motion.span layoutId="sidebar-pill" transition={spring} className="absolute inset-0 rounded-xl bg-white/10 ring-1 ring-white/10">
+                        <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-emerald-400" />
+                      </motion.span>
+                    )}
+                    <span className="relative"><Icon name={n.icon} /></span>
+                    <span className="relative">{n.label}</span>
+                  </>
+                )}
               </NavLink>
             ))}
           </nav>
-          <div className="absolute bottom-4 left-4 right-4 rounded-xl bg-slate-900 p-4 text-sm">
-            <p className="font-semibold text-white">{business.name}</p>
-            <p className="text-slate-400">Founding Member plan</p>
+          <div className="glass mt-auto rounded-2xl p-4 text-sm">
+            <p className="font-medium text-white">{business.name}</p>
+            <p className="text-neutral-400">Founding Member plan</p>
           </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
-            <button className="rounded p-1 text-slate-700 lg:hidden" onClick={() => setNavOpen(true)} aria-label="Open menu" aria-expanded={navOpen}><Icon name="menu" className="h-6 w-6" /></button>
-            <h1 className="flex-1 truncate text-lg font-bold text-slate-900">{customerView ? 'Customer portal preview' : current?.label}</h1>
-            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-800">
-              <Icon name="eye" className="hidden h-4 w-4 sm:block" />
-              <span className="hidden sm:inline">Customer view</span>
-              <span className="sr-only sm:hidden">Customer view</span>
-              <input type="checkbox" role="switch" checked={customerView} onChange={(e) => setCustomerView(e.target.checked)} className="peer sr-only" />
-              <span className="relative h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-emerald-600 peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-500 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-5" />
-            </label>
+          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-white/10 bg-black/70 px-4 backdrop-blur-xl sm:px-6">
+            <button className="rounded-full p-1 text-neutral-300 lg:hidden" onClick={() => setNavOpen(true)} aria-label="Open menu" aria-expanded={navOpen}><Icon name="menu" className="h-6 w-6" /></button>
+            <div className="relative h-7 flex-1 overflow-hidden">
+              <AnimatePresence initial={false} custom={dir}>
+                <motion.h1
+                  key={title} custom={dir}
+                  variants={{
+                    initial: ({ axis, d }) => ({ opacity: 0, y: axis === 'z' ? 0 : d * 20, scale: axis === 'z' ? 0.9 : 1 }),
+                    animate: { opacity: 1, y: 0, scale: 1 },
+                    exit: ({ axis, d }) => ({ opacity: 0, y: axis === 'z' ? 0 : -d * 20, scale: axis === 'z' ? 1.1 : 1 }),
+                  }}
+                  initial="initial" animate="animate" exit="exit" transition={spring}
+                  className="absolute inset-0 origin-left truncate text-lg font-semibold tracking-tight"
+                >
+                  {title}
+                </motion.h1>
+              </AnimatePresence>
+            </div>
+            <span className="flex items-center gap-2">
+              <Icon name="eye" className="hidden h-4 w-4 text-neutral-400 sm:block" />
+              <Switch label="Customer view" checked={customerView} onChange={setCustomerView} />
+            </span>
           </header>
-          <main id="dash-main" className="flex-1 p-4 sm:p-6">
-            {customerView ? (
-              <div>
-                <p className="mb-4 text-sm text-slate-600">This is exactly what your customers see at your public booking & storefront page. Edit branding in <Link to="/dashboard/settings" onClick={() => setCustomerView(false)} className="font-medium text-emerald-800 underline">Settings</Link>.</p>
-                <PortalPreview {...business} />
-              </div>
-            ) : (
-              <Outlet />
-            )}
+          <main id="dash-main" className="flex-1 overflow-x-clip p-4 sm:p-6">
+            <AnimatePresence mode="wait" custom={dir}>
+              <Page key={key} custom={dir}>
+                {customerView ? (
+                  <div>
+                    <p className="mb-5 text-sm text-neutral-400">This is exactly what your customers see at your public booking & storefront page. Edit branding in <Link to="/dashboard/settings" onClick={() => setCustomerView(false)} className="font-medium text-emerald-400 underline-offset-4 hover:underline">Settings</Link>.</p>
+                    <PortalPreview {...business} />
+                  </div>
+                ) : (
+                  <FrozenOutlet />
+                )}
+              </Page>
+            </AnimatePresence>
           </main>
         </div>
       </div>
