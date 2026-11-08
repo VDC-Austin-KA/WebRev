@@ -1,45 +1,116 @@
 @import "tailwindcss";
 
+/* ── Design tokens ─────────────────────────────────────────────── */
 @theme {
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  /* iOS-style easing curves */
-  --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+  --color-bg: #101114;        /* primary background */
+  --color-surface: #17191e;   /* secondary background, cards */
+  --color-raised: #1d2026;    /* elevated surfaces, inputs, active states */
+  --color-line: #30333a;      /* subtle borders and dividers */
+  --color-fg: #f5f5f7;        /* primary text */
+  --color-fg-2: #a1a1aa;      /* secondary text */
+  --color-fg-3: #71717a;      /* muted text: large text, placeholders, disabled */
+  --color-accent: #98a2d4;    /* muted indigo: actions, active and selected states */
+  --color-accent-hover: #b0b8e0;
+  --color-success: #70b48a;
+  --color-warning: #d6aa68;
+  --color-danger: #d77d7d;
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 :root { color-scheme: dark; }
-html { scroll-behavior: smooth; background: #000; }
-body { letter-spacing: -0.011em; -webkit-font-smoothing: antialiased; }
-::selection { background: rgb(52 211 153 / 0.35); color: #fff; }
+html { background: var(--color-bg); }
+body { -webkit-font-smoothing: antialiased; font-feature-settings: "tnum" 0; }
+::selection { background: rgb(152 162 212 / 0.35); }
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Native select with a quiet chevron */
+select.field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23a1a1aa' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+}
+input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color: var(--color-accent); }
+
+/* ── Dialogs: short fade + lift, enter and exit, no JS ─────────── */
+dialog {
+  opacity: 0;
+  translate: 0 6px;
+  transition: opacity 180ms var(--ease-out), translate 180ms var(--ease-out), overlay 180ms allow-discrete, display 180ms allow-discrete;
+}
+dialog[open] { opacity: 1; translate: 0 0; }
+@starting-style { dialog[open] { opacity: 0; translate: 0 6px; } }
+dialog::backdrop { background: rgb(0 0 0 / 0); transition: background 180ms, overlay 180ms allow-discrete, display 180ms allow-discrete; }
+dialog[open]::backdrop { background: rgb(0 0 0 / 0.6); }
+@starting-style { dialog[open]::backdrop { background: rgb(0 0 0 / 0); } }
+
+/* ── Navigation transitions (View Transitions API) ─────────────────
+ * html[data-vt] says which way the user moved:
+ *   page-left / page-right  horizontal nav (site pages)        → content slides along x
+ *   page-up / page-down     vertical nav (dashboard sidebar)    → content slides along y
+ *   page-in / page-out      into / out of the Customer view     → content scales
+ *   tab-left / tab-right    showcase tabs                       → tab panel slides along x
+ *   root-in / root-out      site ↔ dashboard                    → whole view scales
+ *   resize                  layout change (device preview)      → element morphs
+ * Unsupported browsers navigate instantly.
+ */
+html[data-vt^="page-"] .vt-page { view-transition-name: page; }
+html[data-vt^="page-"] .vt-title { view-transition-name: page-title; }
+html[data-vt^="tab-"] .vt-panel { view-transition-name: panel; }
+html[data-vt="resize"] .vt-resize { view-transition-name: resize; }
+
+/* Outside root-level moves, the chrome (nav, sidebar) stays put. */
+html[data-vt]:not([data-vt^="root-"])::view-transition-old(root) { display: none; }
+html[data-vt]:not([data-vt^="root-"])::view-transition-new(root) { animation: none; }
+
+::view-transition-group(*) { animation-duration: 280ms; animation-timing-function: var(--ease-out); }
+::view-transition-old(*) { animation-duration: 160ms; animation-timing-function: ease-in; }
+::view-transition-new(*) { animation-duration: 280ms; animation-timing-function: var(--ease-out); }
+
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in-from-right { from { opacity: 0; transform: translateX(24px); } }
+@keyframes vt-in-from-left { from { opacity: 0; transform: translateX(-24px); } }
+@keyframes vt-in-from-below { from { opacity: 0; transform: translateY(16px); } }
+@keyframes vt-in-from-above { from { opacity: 0; transform: translateY(-16px); } }
+@keyframes vt-in-grow { from { opacity: 0; transform: scale(0.98); } }
+@keyframes vt-in-shrink { from { opacity: 0; transform: scale(1.02); } }
+
+html[data-vt="page-left"]::view-transition-new(page),
+html[data-vt="tab-left"]::view-transition-new(panel) { animation-name: vt-in-from-right; }
+html[data-vt="page-right"]::view-transition-new(page),
+html[data-vt="tab-right"]::view-transition-new(panel) { animation-name: vt-in-from-left; }
+html[data-vt="page-up"]::view-transition-new(page),
+html[data-vt="page-up"]::view-transition-new(page-title) { animation-name: vt-in-from-below; }
+html[data-vt="page-down"]::view-transition-new(page),
+html[data-vt="page-down"]::view-transition-new(page-title) { animation-name: vt-in-from-above; }
+html[data-vt="page-in"]::view-transition-new(page),
+html[data-vt="root-in"]::view-transition-new(root) { animation-name: vt-in-grow; }
+html[data-vt="page-out"]::view-transition-new(page),
+html[data-vt="root-out"]::view-transition-new(root) { animation-name: vt-in-shrink; }
+html[data-vt]::view-transition-old(page),
+html[data-vt]::view-transition-old(page-title),
+html[data-vt]::view-transition-old(panel),
+html[data-vt^="root-"]::view-transition-old(root) { animation-name: vt-out; }
+
+/* Sliding indicator for nav, tabs and segmented controls */
+.indicator { transition: transform 260ms var(--ease-out), width 260ms var(--ease-out), height 260ms var(--ease-out), opacity 150ms; }
+
+@keyframes highlight { from { box-shadow: 0 0 0 2px var(--color-accent); } to { box-shadow: 0 0 0 2px transparent; } }
+.just-added { animation: highlight 1.6s var(--ease-out); }
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after,
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-
-/* Consistent, high-visibility keyboard focus (WCAG 2.4.7) */
-:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 2px solid #34d399;
-  outline-offset: 3px;
-  border-radius: 0.75rem;
-}
-
-/* Modals draw their own animated backdrop. */
-dialog::backdrop { background: transparent; }
-
-/* Shared dark glass surface */
-@utility glass {
-  background: rgb(255 255 255 / 0.04);
-  border: 1px solid rgb(255 255 255 / 0.08);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-}
-
-@utility text-gradient {
-  background: linear-gradient(180deg, #fff 30%, #a3a3a3);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-input[type="range"] { accent-color: #34d399; }
