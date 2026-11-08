@@ -30,8 +30,10 @@ All tokens live in `src/index.css` (`@theme`), so Tailwind classes like `bg-surf
 | `bg` / `surface` / `raised` | `#101114` / `#17191E` / `#1D2026` | Page, cards, inputs and active states |
 | `line` | `#30333A` | Borders and dividers |
 | `fg` / `fg-2` / `fg-3` | `#F5F5F7` / `#A1A1AA` / `#71717A` | Primary, secondary, muted (large text only) |
-| `accent` / `accent-hover` | `#98A2D4` / `#B0B8E0` | Muted indigo, used only for actions, active and selected states |
-| `success` / `warning` / `danger` | `#70B48A` / `#D6AA68` / `#D77D7D` | Status |
+| `brand` / `brand-hover` | `#44499C` / `#5359B2` | City of Austin "Violet Crown" blue: filled actions (buttons, switches) |
+| `accent` | `#9DA2DA` | Tint of the Austin blue for text, icons and indicators on dark backgrounds |
+| `green` / `success` | `#009F4D` | City of Austin green: confirmations, positive values (savings, checks) |
+| `warning` / `danger` | `#D6AA68` / `#D77D7D` | Status |
 
 - **Type:** system font stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", …`), weights 400/500/600, tabular numbers for figures.
 - **Shape:** 8px controls, 12px surfaces. No gradients, glows, glass or blur.

@@ -67,7 +67,7 @@ export default function Landing() {
                   <tr key={cat} className="align-top">
                     <th scope="row" className="hidden px-5 py-4 font-medium sm:table-cell">{cat}</th>
                     <td className="px-5 py-4 text-fg-2"><span className="flex gap-2.5"><Icon name="x" className="mt-0.5 h-4 w-4 shrink-0 text-fg-3" /><span><span className="block text-xs text-fg-2 sm:hidden">{cat}</span>{old}</span></span></td>
-                    <td className="px-5 py-4"><span className="flex gap-2.5"><Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-accent" />{ours}</span></td>
+                    <td className="px-5 py-4"><span className="flex gap-2.5"><Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-green" />{ours}</span></td>
                   </tr>
                 ))}
               </tbody>

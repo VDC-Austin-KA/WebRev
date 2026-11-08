@@ -84,7 +84,7 @@ function CaseStudies() {
               </div>
               <div className="border-t border-line pt-4">
                 <p className="text-[13px] font-medium text-fg-2">After</p>
-                <ul className="mt-2 space-y-1.5">{c.after.map((a) => <li key={a} className="flex gap-2"><Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-accent" />{a}</li>)}</ul>
+                <ul className="mt-2 space-y-1.5">{c.after.map((a) => <li key={a} className="flex gap-2"><Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-green" />{a}</li>)}</ul>
               </div>
             </div>
             <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-line pt-5">
@@ -100,7 +100,7 @@ function CaseStudies() {
 }
 
 // Muted swatches in the same family as the WebRev palette.
-const SWATCHES = [['#98a2d4', 'Indigo'], ['#9db8a4', 'Sage'], ['#8da9b8', 'Slate blue'], ['#c99a82', 'Clay'], ['#c48e9d', 'Rose']]
+const SWATCHES = [['#9da2da', 'Austin blue'], ['#009f4d', 'Austin green'], ['#8da9b8', 'Slate blue'], ['#c99a82', 'Clay'], ['#c48e9d', 'Rose']]
 const TYPE_OPTIONS = Object.entries(BUSINESS_TYPES).map(([value, v]) => ({ value, label: v.label }))
 
 function Sandbox() {

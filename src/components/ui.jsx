@@ -42,7 +42,7 @@ export function Logo() {
 
 // One button system: consistent height, padding and radius; subtle hover/press.
 const BTN = {
-  primary: 'bg-accent text-bg hover:bg-accent-hover',
+  primary: 'bg-brand text-fg hover:bg-brand-hover',
   secondary: 'border border-line bg-raised text-fg hover:border-fg-3',
   quiet: 'text-fg-2 hover:text-fg hover:bg-raised',
 }
@@ -181,7 +181,7 @@ export function Switch({ checked, onChange, label }) {
   return (
     <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)} className="flex items-center gap-2.5 text-sm text-fg-2 hover:text-fg">
       {label}
-      <span className={`flex h-6 w-10 items-center rounded-full p-0.5 transition-colors duration-200 ${checked ? 'bg-accent' : 'bg-line'}`}>
+      <span className={`flex h-6 w-10 items-center rounded-full p-0.5 transition-colors duration-200 ${checked ? 'bg-brand' : 'bg-line'}`}>
         <span className={`h-5 w-5 rounded-full bg-fg shadow transition-transform duration-200 ease-[var(--ease-out)] ${checked ? 'translate-x-4' : ''}`} />
       </span>
     </button>

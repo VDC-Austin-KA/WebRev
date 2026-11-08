@@ -94,7 +94,7 @@ export default function Pricing() {
               <div className="flex justify-between"><dt className="text-fg-2">{soldOut ? 'Standard plan' : 'Founder plan'}</dt><dd className="tabular-nums">{money(ours)}/mo</dd></div>
               <div className="border-t border-line pt-4">
                 <dt className="text-fg-2">You save every year</dt>
-                <dd className="mt-1 text-4xl font-semibold tracking-tight tabular-nums text-accent" aria-live="polite">{money(yearly)}</dd>
+                <dd className="mt-1 text-4xl font-semibold tracking-tight tabular-nums text-green" aria-live="polite">{money(yearly)}</dd>
               </div>
             </dl>
             <p className="mt-6 text-xs text-fg-2">*Estimates based on typical list prices for standalone small-business tools. Your costs may vary.</p>
@@ -108,7 +108,7 @@ export default function Pricing() {
 
 function Tier({ plan, badge, note, features, cta, onClick, highlight }) {
   return (
-    <div className={`flex flex-col rounded-xl border bg-surface p-7 ${highlight ? 'border-accent/60' : 'border-line'}`}>
+    <div className={`flex flex-col rounded-xl border bg-surface p-7 ${highlight ? 'border-brand' : 'border-line'}`}>
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-semibold">{plan.name}</h3>
         <span className={`rounded-md px-2 py-0.5 text-xs ${highlight ? 'bg-accent/15 text-accent' : 'bg-raised text-fg-2'}`}>{badge}</span>
@@ -117,7 +117,7 @@ function Tier({ plan, badge, note, features, cta, onClick, highlight }) {
       <p className="mt-1 text-sm text-fg-2">{note}</p>
       <ul className="mt-6 flex-1 space-y-2.5 border-t border-line pt-6 text-sm">
         {features.map((f) => (
-          <li key={f} className="flex gap-2.5"><Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-accent" />{f}</li>
+          <li key={f} className="flex gap-2.5"><Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-green" />{f}</li>
         ))}
       </ul>
       <Button variant={highlight ? 'primary' : 'secondary'} className="mt-7 w-full" onClick={onClick}>{cta}</Button>

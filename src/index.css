@@ -11,9 +11,12 @@
   --color-fg: #f5f5f7;        /* primary text */
   --color-fg-2: #a1a1aa;      /* secondary text */
   --color-fg-3: #71717a;      /* muted text: large text, placeholders, disabled */
-  --color-accent: #98a2d4;    /* muted indigo: actions, active and selected states */
-  --color-accent-hover: #b0b8e0;
-  --color-success: #70b48a;
+  /* City of Austin brand colors (from the official 2025 logo) */
+  --color-brand: #44499c;       /* Violet Crown blue: filled actions (buttons, switches) */
+  --color-brand-hover: #5359b2;
+  --color-accent: #9da2da;      /* tint of the blue for text, icons, indicators on dark (7.8:1) */
+  --color-green: #009f4d;       /* Austin green: positive values, confirmations */
+  --color-success: #009f4d;
   --color-warning: #d6aa68;
   --color-danger: #d77d7d;
 
@@ -23,7 +26,7 @@
 :root { color-scheme: dark; }
 html { background: var(--color-bg); }
 body { -webkit-font-smoothing: antialiased; font-feature-settings: "tnum" 0; }
-::selection { background: rgb(152 162 212 / 0.35); }
+::selection { background: rgb(68 73 156 / 0.6); }
 
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--color-accent);
