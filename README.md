@@ -3,7 +3,7 @@
 Marketing site + all-in-one client dashboard for small businesses.
 *"Stop juggling 5+ subscriptions. One platform, one monthly bill, total business control."*
 
-Built with React 19, Vite, Tailwind CSS v4, React Router and [Motion](https://motion.dev). Dark, Apple-inspired UI.
+Built with React 19, Vite, Tailwind CSS v4 and React Router. Restrained dark UI with no animation library and no web fonts.
 
 ## Run
 
@@ -21,16 +21,32 @@ npm run build    # static output in dist/
 | `/showcase` (alias `/examples`) | Tabbed hub: video demo gallery (modal player), before/after case-study cards, interactive customer-portal sandbox |
 | `/dashboard/*` | Client app: Overview, Calendar & Bookings, Sales & Products, Team (HR & PTO), Payroll, Settings, plus a **Customer view** toggle that previews the public storefront/booking page |
 
-## Motion language
+## Design system
 
-Animations follow the layout so users can tell where they are from movement alone (all in `src/motion.jsx`):
+All tokens live in `src/index.css` (`@theme`), so Tailwind classes like `bg-surface`, `text-fg-2`, `border-line` and `text-accent` stay consistent:
 
-- **Horizontal UI → horizontal motion.** Top-nav pages and showcase tabs slide left/right in the direction travelled; a pill glides under the active item. The nav pill also follows the section you scroll into, and a hairline progress bar tracks scroll depth.
-- **Vertical UI → vertical motion.** Dashboard pages rise from below when moving down the sidebar and drop from above when moving up; the sidebar indicator and page title move the same way.
-- **Depth → zoom.** Entering the dashboard or the Customer view zooms in; leaving zooms back out. Dialogs grow out of the button that opened them and shrink back into it.
-- **Reading order.** Cards, rows and list items stagger in top-to-bottom, left-to-right. Counters count up, charts grow from their baseline, and approved PTO requests slide below pending ones.
-- Buttons respond to presses with spring scale; dropdowns (custom accessible listbox) unfold from their trigger.
-- `prefers-reduced-motion` is respected: movement is removed, fades remain.
+| Token | Value | Use |
+|---|---|---|
+| `bg` / `surface` / `raised` | `#101114` / `#17191E` / `#1D2026` | Page, cards, inputs and active states |
+| `line` | `#30333A` | Borders and dividers |
+| `fg` / `fg-2` / `fg-3` | `#F5F5F7` / `#A1A1AA` / `#71717A` | Primary, secondary, muted (large text only) |
+| `accent` / `accent-hover` | `#98A2D4` / `#B0B8E0` | Muted indigo, used only for actions, active and selected states |
+| `success` / `warning` / `danger` | `#70B48A` / `#D6AA68` / `#D77D7D` | Status |
+
+- **Type:** system font stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", …`), weights 400/500/600, tabular numbers for figures.
+- **Shape:** 8px controls, 12px surfaces. No gradients, glows, glass or blur.
+- **Components:** one button system (`primary` / `secondary` / `quiet` × `sm` / `md` / `lg`), native selects, checkboxes and dialogs.
+- **Data:** grouped into one surface with dividers rather than separate cards.
+
+## Transitions
+
+Animations exist to show where you moved, and they use only the browser's View Transitions API and CSS (`src/transitions.js`, `src/index.css`):
+
+- **Horizontal navigation** (top nav, showcase tabs): content slides in from the direction you moved.
+- **Dashboard sidebar:** content and page title come from below when moving down the list, from above when moving up.
+- **Depth:** entering the dashboard or the Customer view scales in; leaving scales out.
+- **Indicators:** active-item markers slide between items using CSS transitions. Dialogs fade in and out with CSS.
+- Browsers without View Transitions switch pages instantly. `prefers-reduced-motion` turns all motion off.
 
 ## Configure
 

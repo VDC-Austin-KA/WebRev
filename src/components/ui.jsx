@@ -1,8 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'motion/react'
 import { BRAND, FOUNDER } from '../config'
-import { easeOut, spring } from '../motion'
+import { useIndicator } from '../transitions'
 
 // Minimal inline icon set (stroke icons, 24x24).
 const PATHS = {
@@ -20,15 +19,13 @@ const PATHS = {
   eye: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12zM12 15a3 3 0 100-6 3 3 0 000 6z',
   arrow: 'M5 12h14M13 5l7 7-7 7',
   chart: 'M3 3v18h18M7 15l4-4 3 3 5-6',
-  clock: 'M12 22a10 10 0 100-20 10 10 0 000 20zM12 6v6l4 2',
   monitor: 'M3 4h18v12H3zM8 20h8M12 16v4',
   phone: 'M7 2h10a1 1 0 011 1v18a1 1 0 01-1 1H7a1 1 0 01-1-1V3a1 1 0 011-1zM11 18h2',
-  chevron: 'M6 9l6 6 6-6',
 }
 
 export function Icon({ name, className = 'h-5 w-5' }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
       <path d={PATHS[name]} fill={name === 'play' ? 'currentColor' : 'none'} />
     </svg>
   )
@@ -36,100 +33,54 @@ export function Icon({ name, className = 'h-5 w-5' }) {
 
 export function Logo() {
   return (
-    <span className="flex items-center gap-2 text-[17px] font-semibold tracking-tight text-white">
-      <img src="/favicon.svg" alt="" className="h-7 w-7" />
+    <span className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-fg">
+      <img src="/favicon.svg" alt="" className="h-6 w-6" />
       {BRAND}
     </span>
   )
 }
 
+// One button system: consistent height, padding and radius; subtle hover/press.
 const BTN = {
-  primary: 'bg-emerald-400 text-black hover:bg-emerald-300 shadow-[0_0_0_0_rgba(52,211,153,0)] hover:shadow-[0_8px_30px_-6px_rgba(52,211,153,0.55)]',
-  white: 'bg-white text-black hover:bg-neutral-200',
-  glass: 'glass text-white hover:bg-white/10',
+  primary: 'bg-accent text-bg hover:bg-accent-hover',
+  secondary: 'border border-line bg-raised text-fg hover:border-fg-3',
+  quiet: 'text-fg-2 hover:text-fg hover:bg-raised',
 }
-const MotionLink = motion.create(Link)
+// min-height (not fixed height) so long labels wrap cleanly on narrow screens.
+const SIZE = { sm: 'min-h-8 px-3 py-1 text-[13px]', md: 'min-h-10 px-4 py-2 text-sm', lg: 'min-h-11 px-5 py-2.5 text-[15px]' }
 
-/** Pill button with press feedback. Pass `to` to render a router link. */
-export function Button({ variant = 'primary', className = '', to, ...props }) {
-  const Comp = to ? MotionLink : motion.button
-  return (
-    <Comp
-      to={to}
-      whileHover={{ y: -1 }}
-      whileTap={{ scale: 0.96 }}
-      transition={spring}
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-[15px] font-medium transition-[background-color,box-shadow] duration-300 disabled:pointer-events-none disabled:opacity-40 ${BTN[variant]} ${className}`}
-      {...props}
-    />
-  )
+/** Pass `to` to render an in-app link. */
+export function Button({ variant = 'primary', size = 'md', className = '', to, ...props }) {
+  const cls = `inline-flex items-center justify-center gap-2 rounded-lg text-center font-medium transition-colors duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-40 ${BTN[variant]} ${SIZE[size]} ${className}`
+  return to ? <Link to={to} viewTransition className={cls} {...props} /> : <button className={cls} {...props} />
 }
 
-// Last pointer position, so dialogs can grow out of whatever was clicked.
-let lastPointer = { x: 0, y: 0, t: 0 }
-if (typeof window !== 'undefined') {
-  window.addEventListener('pointerdown', (e) => { lastPointer = { x: e.clientX, y: e.clientY, t: Date.now() } }, true)
-}
-function originPoint() {
-  if (Date.now() - lastPointer.t < 800) return lastPointer
-  const r = document.activeElement?.getBoundingClientRect?.()
-  return r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: innerWidth / 2, y: innerHeight / 2 }
-}
-
-/**
- * Native <dialog> (focus trap, Esc, focus restore) whose panel zooms out of the
- * element that opened it and shrinks back into it on close.
- */
+/** Native <dialog>: focus trap, Esc, focus restore. Enter/exit animation lives in CSS. */
 export function Modal({ open, onClose, title, children, wide = false }) {
   const ref = useRef(null)
   const titleId = useId()
-  const origin = useRef(null)
-  const wasOpen = useRef(false)
-  if (open && !wasOpen.current) {
-    const p = originPoint()
-    origin.current = { x: p.x - innerWidth / 2, y: p.y - innerHeight / 2 }
-  }
   useEffect(() => {
-    wasOpen.current = open
-    if (open && !ref.current.open) ref.current.showModal()
+    const d = ref.current
+    if (open && !d.open) d.showModal()
+    if (!open && d.open) d.close()
   }, [open])
-  const o = origin.current ?? { x: 0, y: 0 }
-
   return (
     <dialog
       ref={ref}
+      onClose={onClose}
+      onClick={(e) => e.target === ref.current && onClose()}
       aria-labelledby={titleId}
-      onCancel={(e) => { e.preventDefault(); onClose() }}
-      className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none overflow-visible bg-transparent p-0"
+      className={`m-auto w-[calc(100%-2rem)] ${wide ? 'max-w-3xl' : 'max-w-md'} rounded-xl border border-line bg-surface p-0 text-fg shadow-2xl shadow-black/50`}
     >
-      <AnimatePresence onExitComplete={() => ref.current?.close()}>
-        {open && (
-          <div className="flex h-full items-center justify-center p-4">
-            <motion.div
-              key="backdrop"
-              className="absolute inset-0 bg-black/60 backdrop-blur-md"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              onClick={onClose}
-            />
-            <motion.div
-              key="panel"
-              initial={{ opacity: 0, scale: 0.4, x: o.x, y: o.y }}
-              animate={{ opacity: 1, scale: 1, x: 0, y: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } }}
-              exit={{ opacity: 0, scale: 0.4, x: o.x, y: o.y, transition: { duration: 0.28, ease: [0.4, 0, 0.2, 1] } }}
-              className={`relative w-full ${wide ? 'max-w-4xl' : 'max-w-lg'} max-h-[90dvh] overflow-y-auto rounded-3xl border border-white/10 bg-neutral-900/95 p-6 shadow-2xl shadow-black`}
-            >
-              <div className="mb-5 flex items-start justify-between gap-4">
-                <h2 id={titleId} className="text-xl font-semibold tracking-tight text-white">{title}</h2>
-                <motion.button whileTap={{ scale: 0.9 }} whileHover={{ rotate: 90 }} transition={spring} onClick={onClose} className="rounded-full bg-white/10 p-1.5 text-neutral-300 hover:text-white" aria-label="Close dialog">
-                  <Icon name="x" className="h-4 w-4" />
-                </motion.button>
-              </div>
-              {children}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <div className="p-6">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <h2 id={titleId} className="text-lg font-semibold">{title}</h2>
+          <button onClick={onClose} className="rounded-md p-1 text-fg-2 hover:bg-raised hover:text-fg" aria-label="Close dialog">
+            <Icon name="x" className="h-4 w-4" />
+          </button>
+        </div>
+        {children}
+      </div>
     </dialog>
   )
 }
@@ -137,21 +88,16 @@ export function Modal({ open, onClose, title, children, wide = false }) {
 export function VideoPlayer({ video }) {
   if (video.embedUrl) {
     return video.embedUrl.endsWith('.mp4') ? (
-      <video src={video.embedUrl} controls autoPlay className="aspect-video w-full rounded-2xl bg-black" />
+      <video src={video.embedUrl} controls autoPlay className="aspect-video w-full rounded-lg bg-black" />
     ) : (
-      <iframe src={video.embedUrl} title={video.title} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen className="aspect-video w-full rounded-2xl" />
+      <iframe src={video.embedUrl} title={video.title} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen className="aspect-video w-full rounded-lg" />
     )
   }
   return (
-    <div className="relative flex aspect-video w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-neutral-800 to-black p-6 text-center">
-      <motion.span
-        className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-black"
-        initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ ...spring, delay: 0.15 }}
-      >
-        <Icon name="play" className="h-7 w-7" />
-      </motion.span>
-      <p className="text-lg font-semibold text-white">{video.title}</p>
-      <p className="max-w-md text-sm text-neutral-400">Recording in production. Book a live walkthrough and we'll show you this on a call.</p>
+    <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-lg border border-line bg-bg p-6 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full border border-line text-fg-2"><Icon name="play" className="h-5 w-5" /></span>
+      <p className="font-medium">{video.title}</p>
+      <p className="max-w-sm text-sm text-fg-2">Recording in production. Book a live walkthrough and we'll show you this on a call.</p>
     </div>
   )
 }
@@ -177,24 +123,19 @@ export function useFounderSpots() {
 export function SpotsBadge() {
   const { left, total } = useFounderSpots()
   return (
-    <span role="status" className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-medium text-emerald-300">
-      <span className="relative flex h-2 w-2">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-      </span>
-      Early-Bird Founder Plan: Only {left} of {total} spots left!
+    <span role="status" className="inline-flex items-center gap-2 rounded-md border border-line bg-surface px-2.5 py-1 text-[13px] text-fg-2">
+      <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+      <span>Early-Bird Founder Plan: Only <span className="font-medium text-fg">{left} of {total}</span> spots left!</span>
     </span>
   )
 }
 
 /** Shared sliding highlight used by tabs and segmented controls. */
-function Pill({ id }) {
-  return <motion.span layoutId={id} transition={spring} className="absolute inset-0 rounded-full bg-white/15 shadow-sm ring-1 ring-white/10" />
-}
+const Indicator = ({ style }) => <span aria-hidden="true" className="indicator absolute left-0 top-0 rounded-md bg-raised shadow-sm ring-1 ring-line" style={style} />
 
-// Accessible tabs (WAI-ARIA pattern with arrow-key navigation) and a gliding indicator.
+// Accessible tabs (WAI-ARIA pattern with arrow-key navigation).
 export function Tabs({ tabs, active, onChange, label }) {
-  const pill = useId()
+  const [ref, style] = useIndicator(active)
   const onKey = (e, i) => {
     const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
     if (!d) return
@@ -203,134 +144,66 @@ export function Tabs({ tabs, active, onChange, label }) {
     document.getElementById(`tab-${next}`)?.focus()
   }
   return (
-    <div role="tablist" aria-label={label} className="glass inline-flex flex-wrap gap-1 rounded-full p-1">
+    <div ref={ref} role="tablist" aria-label={label} className="relative inline-flex flex-wrap gap-1 rounded-lg border border-line bg-surface p-1">
+      <Indicator style={style} />
       {tabs.map((t, i) => (
         <button
-          key={t.id}
-          id={`tab-${t.id}`}
-          role="tab"
-          aria-selected={active === t.id}
-          aria-controls={`panel-${t.id}`}
-          tabIndex={active === t.id ? 0 : -1}
-          onClick={() => onChange(t.id)}
-          onKeyDown={(e) => onKey(e, i)}
-          className={`relative rounded-full px-5 py-2 text-sm font-medium transition-colors duration-300 ${active === t.id ? 'text-white' : 'text-neutral-400 hover:text-neutral-200'}`}
+          key={t.id} id={`tab-${t.id}`} role="tab" data-active={active === t.id}
+          aria-selected={active === t.id} aria-controls={`panel-${t.id}`} tabIndex={active === t.id ? 0 : -1}
+          onClick={() => onChange(t.id)} onKeyDown={(e) => onKey(e, i)}
+          className={`relative h-8 rounded-md px-3.5 text-sm transition-colors ${active === t.id ? 'text-fg' : 'text-fg-2 hover:text-fg'}`}
         >
-          {active === t.id && <Pill id={pill} />}
-          <span className="relative">{t.label}</span>
+          {t.label}
         </button>
       ))}
     </div>
   )
 }
 
-/** Toggle-button group (aria-pressed) with the same gliding indicator. */
+/** Toggle-button group (aria-pressed) with the same sliding indicator. */
 export function Segmented({ options, value, onChange, label }) {
-  const pill = useId()
+  const [ref, style] = useIndicator(value)
   return (
-    <div role="group" aria-label={label} className="glass inline-flex gap-1 rounded-full p-1">
+    <div ref={ref} role="group" aria-label={label} className="relative inline-flex gap-1 rounded-lg border border-line bg-surface p-1">
+      <Indicator style={style} />
       {options.map((o) => (
-        <button key={o.value} type="button" aria-pressed={value === o.value} onClick={() => onChange(o.value)}
-          className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${value === o.value ? 'text-white' : 'text-neutral-400 hover:text-neutral-200'}`}>
-          {value === o.value && <Pill id={pill} />}
-          <span className="relative flex items-center gap-1.5">{o.icon && <Icon name={o.icon} className="h-4 w-4" />}{o.label}</span>
+        <button key={o.value} type="button" data-active={value === o.value} aria-pressed={value === o.value} onClick={() => onChange(o.value)}
+          className={`relative flex h-8 items-center gap-1.5 rounded-md px-3 text-sm transition-colors ${value === o.value ? 'text-fg' : 'text-fg-2 hover:text-fg'}`}>
+          {o.icon && <Icon name={o.icon} className="h-4 w-4" />}{o.label}
         </button>
       ))}
     </div>
   )
 }
 
-/** iOS-style switch. */
-export function Switch({ checked, onChange, label, showLabel = true }) {
+/** Native-feeling switch. */
+export function Switch({ checked, onChange, label }) {
   return (
-    <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)} className="flex items-center gap-2.5 text-sm font-medium text-neutral-200">
-      <span className={showLabel ? '' : 'sr-only'}>{label}</span>
-      <span className={`flex h-[30px] w-[50px] rounded-full p-[2px] transition-colors duration-300 ${checked ? 'justify-end bg-emerald-500' : 'justify-start bg-white/15'}`}>
-        <motion.span layout transition={spring} className="h-[26px] w-[26px] rounded-full bg-white shadow-md" />
+    <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)} className="flex items-center gap-2.5 text-sm text-fg-2 hover:text-fg">
+      {label}
+      <span className={`flex h-6 w-10 items-center rounded-full p-0.5 transition-colors duration-200 ${checked ? 'bg-accent' : 'bg-line'}`}>
+        <span className={`h-5 w-5 rounded-full bg-fg shadow transition-transform duration-200 ease-[var(--ease-out)] ${checked ? 'translate-x-4' : ''}`} />
       </span>
     </button>
   )
 }
 
-/**
- * Animated, accessible select (button + listbox). Controlled via value/onChange,
- * or uncontrolled via defaultValue; `name` submits the value with a form.
- */
-export function Select({ label, options, value, defaultValue, onChange, name }) {
+export const fieldCls = 'field h-10 w-full rounded-lg border border-line bg-raised px-3 text-sm text-fg placeholder:text-fg-3 transition-colors hover:border-fg-3 focus:border-accent'
+export const labelCls = 'mb-1.5 block text-[13px] font-medium text-fg-2'
+
+/** Labelled native select. */
+export function Select({ label, options, ...props }) {
   const id = useId()
-  const [inner, setInner] = useState(defaultValue ?? options[0].value)
-  const current = value ?? inner
-  const [open, setOpen] = useState(false)
-  const [active, setActive] = useState(0)
-  const btn = useRef(null)
-  const list = useRef(null)
-  const root = useRef(null)
-  const idx = Math.max(0, options.findIndex((o) => o.value === current))
-
-  const choose = (v) => { setInner(v); onChange?.(v); setOpen(false); btn.current?.focus() }
-  const show = () => { setActive(idx); setOpen(true) }
-
-  useEffect(() => {
-    if (!open) return
-    list.current?.focus()
-    const away = (e) => !root.current?.contains(e.target) && setOpen(false)
-    document.addEventListener('pointerdown', away)
-    return () => document.removeEventListener('pointerdown', away)
-  }, [open])
-
-  const onListKey = (e) => {
-    const n = options.length
-    const map = { ArrowDown: active + 1, ArrowUp: active - 1, Home: 0, End: n - 1 }
-    if (e.key in map) { e.preventDefault(); setActive((map[e.key] + n) % n) }
-    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(options[active].value) }
-    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setOpen(false); btn.current?.focus() }
-    else if (e.key === 'Tab') setOpen(false)
-  }
-
   return (
-    <div ref={root} className="relative">
-      <span id={`${id}-l`} className="mb-1.5 block text-sm font-medium text-neutral-300">{label}</span>
-      {name && <input type="hidden" name={name} value={current} />}
-      <motion.button
-        ref={btn} type="button" whileTap={{ scale: 0.98 }}
-        aria-haspopup="listbox" aria-expanded={open} aria-labelledby={`${id}-l ${id}-b`} id={`${id}-b`}
-        onClick={() => (open ? setOpen(false) : show())}
-        onKeyDown={(e) => ['ArrowDown', 'ArrowUp'].includes(e.key) && (e.preventDefault(), show())}
-        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-left text-white transition-colors hover:bg-white/10"
-      >
-        {options[idx].label}
-        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={spring}><Icon name="chevron" className="h-4 w-4 text-neutral-400" /></motion.span>
-      </motion.button>
-      <AnimatePresence>
-        {open && (
-          <motion.ul
-            ref={list} role="listbox" tabIndex={-1} aria-labelledby={`${id}-l`}
-            aria-activedescendant={`${id}-o${active}`} onKeyDown={onListKey}
-            initial={{ opacity: 0, scale: 0.95, y: -6 }}
-            animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.22, ease: easeOut } }}
-            exit={{ opacity: 0, scale: 0.97, y: -4, transition: { duration: 0.14 } }}
-            style={{ transformOrigin: 'top center' }}
-            className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-2xl shadow-black backdrop-blur-xl outline-none"
-          >
-            {options.map((o, i) => (
-              <motion.li
-                key={o.value} id={`${id}-o${i}`} role="option" aria-selected={o.value === current}
-                initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.03 * i } }}
-                onPointerMove={() => setActive(i)} onClick={() => choose(o.value)}
-                className="relative flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm text-neutral-200"
-              >
-                {i === active && <motion.span layoutId={`${id}-hl`} transition={spring} className="absolute inset-0 rounded-xl bg-white/10" />}
-                <span className="relative">{o.label}</span>
-                {o.value === current && <Icon name="check" className="relative h-4 w-4 text-emerald-400" />}
-              </motion.li>
-            ))}
-          </motion.ul>
-        )}
-      </AnimatePresence>
+    <div>
+      <label htmlFor={id} className={labelCls}>{label}</label>
+      <select id={id} className={fieldCls} {...props}>
+        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
     </div>
   )
 }
 
-export const inputCls = 'w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-white placeholder:text-neutral-500 transition-colors hover:bg-white/10 focus:bg-white/10'
+export const card = 'rounded-xl border border-line bg-surface'
 
 export const money = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
