@@ -10,7 +10,7 @@ const DashCtx = createContext(null)
 export const useDash = () => useContext(DashCtx)
 
 export default function DashboardLayout() {
-  const [business, setBusiness] = useState({ name: 'Bloom & Co. Salon', tagline: 'Modern cuts, warm welcomes.', type: 'salon', color: '#98a2d4' })
+  const [business, setBusiness] = useState({ name: 'Bloom & Co. Salon', tagline: 'Modern cuts, warm welcomes.', type: 'salon', color: '#9da2da' })
   const [appointments, setAppointments] = useState(APPOINTMENTS)
   const [pto, setPto] = useState(PTO_REQUESTS)
   const [customerView, setCustomerView] = useState(false)

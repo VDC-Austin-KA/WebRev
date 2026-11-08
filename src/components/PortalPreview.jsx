@@ -5,7 +5,7 @@ import { Icon } from './ui'
 // What an end customer sees: storefront + booking page for a client business.
 // Used by the showcase sandbox and the dashboard's "Customer view" toggle.
 // The client's own brand color marks selection and identity; everything else stays neutral.
-export default function PortalPreview({ name, tagline, type = 'salon', color = '#98a2d4', device = 'desktop' }) {
+export default function PortalPreview({ name, tagline, type = 'salon', color = '#9da2da', device = 'desktop' }) {
   const services = BUSINESS_TYPES[type].services
   const [picked, setPicked] = useState(null)
   const [slot, setSlot] = useState(null)
